@@ -1,0 +1,24 @@
+{
+  "models": {
+    "fast": "gemma4:e2b",
+    "planner": "gemma4:e2b",
+    "embeddings": "nomic-embed-text:latest"
+  },
+  "ollama": {
+    "baseUrl": "http://127.0.0.1:11434"
+  },
+  "runtime": {
+    "retryLimit": 3,
+    "screenshotWidth": 1280,
+    "screenshotQuality": 85,
+    "checkpointIntervalMs": 30000,
+    "memoryTopK": 5,
+    "historySummarizeEvery": 10
+  },
+  "mcpServers": {},
+  "preferences": {
+    "browser": "chrome",
+    "editor": "vscode",
+    "terminal": "windows_terminal"
+  }
+}

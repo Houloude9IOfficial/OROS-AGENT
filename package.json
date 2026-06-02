@@ -1,0 +1,27 @@
+{
+  "name": "oros",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OROS is a local-first Windows autonomous agent runtime.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node src/index.ts",
+    "start": "node src/index.ts",
+    "test": "node --test test/all.test.ts",
+    "test:coverage": "node --test --experimental-test-coverage test/all.test.ts",
+    "doctor": "node src/index.ts doctor"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "firecrawl": "^4.25.2",
+    "inquirer": "^14.0.2",
+    "ollama": "^0.6.3",
+    "playwright": "^1.60.0"
+  }
+}
