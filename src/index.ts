@@ -17,6 +17,7 @@ import { Planner } from './core/planner.ts'
 import { buildPlanSummary } from './llm/prompt-engine.ts'
 import { getDataRoot } from './system/paths.ts'
 import { consentHelpLine, ensureAcceptedRisks, saveAcceptedRisks } from './system/consent.ts'
+import { runUI } from './cli/ui.ts'
 
 function parseArgs(argv: string[]): { command: string; goal?: string; riskAck: boolean; taskId?: string; configPath?: string } {
   const [command = 'help', ...rest] = argv
@@ -185,6 +186,48 @@ async function main(): Promise<void> {
       await saveAcceptedRisks('command')
       console.log('Risk acceptance saved. Future runs can proceed without re-accepting.')
       return
+    case 'ui': {
+      const config = await loadConfig(parsed.configPath)
+      const logger = createLogger()
+    
+      const stateManager = new StateManager()
+    
+      const ollama = new OllamaClient(config.ollama.baseUrl)
+      const embedder = new Embedder(ollama, config.models.embeddings)
+    
+      const dataRoot = getDataRoot()
+    
+      const vectorStore = new VectorStore(
+        resolve(dataRoot, 'memory', 'vector', 'episodes.json')
+      )
+    
+      const structuredStore = new StructuredStore(
+        resolve(dataRoot, 'memory', 'structured')
+      )
+    
+      const contextManager = new ContextManager(
+        vectorStore,
+        embedder,
+        structuredStore,
+        config.runtime.memoryTopK
+      )
+    
+      const mcp = new McpHost(config.mcpServers)
+    
+      await mcp.initialize().catch(() => {})
+    
+      const agent = new Agent({
+        config,
+        logger,
+        stateManager,
+        contextManager,
+        embedder,
+        mcp
+      })
+    
+      await runUI({ agent })
+      return
+    }
     case 'help':
       if (!(await ensureAcceptedRisks())) {
         console.log(consentHelpLine())

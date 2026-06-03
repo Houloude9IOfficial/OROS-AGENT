@@ -48,13 +48,26 @@ export class OllamaClient {
   private readonly client: Ollama
   private readonly timeoutMs: number
   private readonly controllers = new Set<AbortController>()
+  private readonly baseUrl: string
 
   constructor(baseUrl: string, timeoutMs: number = 180000) {
     this.timeoutMs = timeoutMs
+    this.baseUrl = baseUrl
     this.client = new Ollama({
       host: baseUrl,
       fetch: createTimeoutFetch(timeoutMs, this.controllers)
     })
+  }
+
+  async ping(): Promise<{ success: boolean }> {
+    const response = await fetch(`${this.baseUrl}`, { signal: AbortSignal.timeout(this.timeoutMs) })
+    if (!response.ok) {
+      throw new Error(`Ollama ping failed with status ${response.status}: ${response.statusText}`)
+    } else {
+      return {
+        success: true
+      }
+    }
   }
 
   abort(): void {

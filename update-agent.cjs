@@ -147,7 +147,7 @@ const newToolLoop = `  private async toolLoop(state: AgentState, goal: string, t
             for (const toolCall of nextToolCalls) {
                 const result = await executeToolCall(toolCall, messages)
                 if (toolCall.function.name === 'console_finalize') {
-                  this.deps.logger.info('Agent finished task successfully via console_finalize.')
+                  this.deps.logger.success('Agent finished task successfully via console_finalize.')
                   state.stopped = true
                   this.stopped = true
                   return
@@ -175,7 +175,7 @@ const newToolLoop = `  private async toolLoop(state: AgentState, goal: string, t
             }
 
             if (toolCall.function.name === 'console_finalize') {
-                this.deps.logger.info('Agent finished task successfully via console_finalize.')
+                this.deps.logger.success('Agent finished task successfully via console_finalize.')
                 state.stopped = true
                 this.stopped = true
                 return

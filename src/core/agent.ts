@@ -192,6 +192,23 @@ export class Agent {
     this.paused = false
     this.stopped = false
     this.approvedToolCategories.clear()
+    this.deps.logger.info('Checking Ollama connection...')
+    try {
+      const ping = await this.ollama.ping()
+      if (!ping.success) {
+        throw new Error('Ollama ping did not return success')
+      }
+      this.deps.logger.success('Ollama connection successful')
+    } catch (error) {
+      this.deps.logger.error('Ollama connection failed')
+      this.deps.logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`)
+
+      // state.waitingForUser = true
+      // await this.deps.stateManager.saveCheckpoint(taskId, state)
+      return state
+    }
+
+    state.currentTaskId = taskId
     this.deps.logger.info('Agent starting', { goal, taskId, model: this.deps.config.models.planner })
 
     try {
@@ -363,7 +380,7 @@ export class Agent {
             for (const toolCall of nextToolCalls) {
                 const result = await executeToolCall(toolCall, messages)
                 if (toolCall.function.name === 'console_finalize') {
-                  this.deps.logger.info('Agent finished task successfully via console_finalize.')
+                  this.deps.logger.success('Agent finished task successfully via console_finalize.')
                   state.stopped = true
                   this.stopped = true
                   return
@@ -391,7 +408,7 @@ export class Agent {
             }
 
             if (toolCall.function.name === 'console_finalize') {
-                this.deps.logger.info('Agent finished task successfully via console_finalize.')
+                this.deps.logger.success('Agent finished task successfully via console_finalize.')
                 state.stopped = true
                 this.stopped = true
                 return

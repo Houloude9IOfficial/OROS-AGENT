@@ -15,13 +15,17 @@
     "doctor": "node src/index.ts doctor"
   },
   "devDependencies": {
+    "@types/figlet": "^1.7.0",
     "@types/node": "^25.9.1"
   },
   "dependencies": {
+    "chalk": "^5.6.2",
     "dotenv": "^17.4.2",
+    "figlet": "^1.11.0",
     "firecrawl": "^4.25.2",
     "inquirer": "^14.0.2",
     "ollama": "^0.6.3",
+    "ora": "^9.4.0",
     "playwright": "^1.60.0"
   }
 }

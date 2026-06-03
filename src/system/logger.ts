@@ -1,14 +1,33 @@
 import { appendFile, mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { getDataRoot } from './paths.ts'
+import chalk from 'chalk'
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'success' | 'other'
 
 export interface Logger {
   debug(message: string, details?: Record<string, unknown>): void
   info(message: string, details?: Record<string, unknown>): void
   warn(message: string, details?: Record<string, unknown>): void
   error(message: string, details?: Record<string, unknown>): void
+  success(message: string, details?: Record<string, unknown>): void
+  other(message: string, details?: Record<string, unknown>): void
+}
+
+export interface LogColorMap {
+  debug: any
+  info: any
+  warn: any
+  error: any
+  success: any
+}
+
+const logColorMap: LogColorMap = {
+  debug: chalk.gray,
+  info: chalk.blue,
+  warn: chalk.yellow,
+  error: chalk.red,
+  success: chalk.green
 }
 
 function serialize(level: LogLevel, message: string, details?: Record<string, unknown>): string {
@@ -29,22 +48,37 @@ export function createLogger(logFile?: string): Logger {
       await mkdir(directory, { recursive: true })
       await appendFile(resolvedLogFile, serialize(level, message, details), 'utf8')
     } catch {
-      // File logging is best-effort. Console output still happens below.
+      // ignore file errors
     }
+  
     const line = `[${level.toUpperCase()}] ${message}`
+    const detailStr = details ? JSON.stringify(details) : ''
+  
     if (level === 'error') {
-      console.error(line, details || '')
+      console.error(chalk.red(line), detailStr)
       return
     }
+  
     if (level === 'warn') {
-      console.warn(line, details || '')
+      console.warn(chalk.yellow(line), detailStr)
       return
     }
+  
     if (level === 'debug') {
-      console.debug(line, details || '')
+      console.debug(chalk.gray(line), detailStr)
       return
     }
-    console.log(line, details || '')
+
+    if (level === 'success') {
+      console.log(chalk.green(line), detailStr)
+      return
+    }
+
+    if (level === 'other') {
+      console.log(line, detailStr)
+      return
+    }
+    console.log(chalk.blue(line), detailStr)
   }
 
   return {
@@ -59,6 +93,13 @@ export function createLogger(logFile?: string): Logger {
     },
     error: (message, details) => {
       void write('error', message, details)
+    },
+    success: (message: string, details?: Record<string, unknown>) => {
+      void write('success', message, details)
+    },
+
+    other: (message: string, details?: Record<string, unknown>) => {
+      void write('other', message, details)
     }
   }
 }
