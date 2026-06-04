@@ -50,7 +50,7 @@ export class OllamaClient {
   private readonly controllers = new Set<AbortController>()
   private readonly baseUrl: string
 
-  constructor(baseUrl: string, timeoutMs: number = 300000) {
+  constructor(baseUrl: string, timeoutMs: number = 3600000) {
     this.timeoutMs = timeoutMs
     this.baseUrl = baseUrl
     this.client = new Ollama({
