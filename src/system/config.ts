@@ -39,14 +39,22 @@ function mergeServerConfig(value: unknown): McpServerConfig | undefined {
     return undefined
   }
 
-  const env = isRecord(value.env) ? Object.fromEntries(Object.entries(value.env).filter(([, v]) => typeof v === 'string')) : undefined
+  const env = isRecord(value.env) ? Object.fromEntries(Object.entries(value.env).filter(([, v]) => typeof v === 'string')) as Record<string, string> | undefined : undefined
 
-  return {
+  const config: McpServerConfig = {
     command: value.command,
-    args: value.args.filter((arg): arg is string => typeof arg === 'string'),
-    cwd: typeof value.cwd === 'string' ? value.cwd : undefined,
-    env
+    args: value.args.filter((arg): arg is string => typeof arg === 'string')
   }
+
+  if (typeof value.cwd === 'string') {
+    config.cwd = value.cwd
+  }
+
+  if (env) {
+    config.env = env
+  }
+
+  return config
 }
 
 export async function fileExists(path: string): Promise<boolean> {

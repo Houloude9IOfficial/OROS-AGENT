@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { Action, ActionResult, AgentChatMessage, AgentState, NativeToolExecutionResult, OrosConfig } from '../types/index.ts'
 import { OllamaClient } from '../llm/ollama-client.ts'
+
+type HistoryToolResult = ActionResult
 import { ScreenAnalyzer, isVisionModel } from '../perception/screen-analyzer.ts'
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -429,8 +431,7 @@ export class Agent {
         response = await this.ollama.chat({
           model: this.deps.config.models.planner,
           messages,
-          tools: toOllamaTools(tools),
-          think: undefined // Let the model use thinking if it supports it natively
+          tools: toOllamaTools(tools)
         })
       } catch (error) {
         this.deps.logger.warn('Ollama chat failed; pausing run', { error: error instanceof Error ? error.message : String(error) })
@@ -443,11 +444,14 @@ export class Agent {
       const toolCalls = assistantMessage.tool_calls || []
 
       // Add assistant message to context
-      messages.push({
+      const assistantMsg: AgentChatMessage = {
         role: 'assistant',
-        content: assistantMessage.content || '',
-        tool_calls: toolCalls.length > 0 ? toolCalls : undefined
-      })
+        content: assistantMessage.content || ''
+      }
+      if (toolCalls.length > 0) {
+        assistantMsg.tool_calls = toolCalls
+      }
+      messages.push(assistantMsg)
 
       if (toolCalls.length === 0) {
         // Model didn't call any tools. Ask it to use a tool or finish.
@@ -462,8 +466,7 @@ export class Agent {
             response = await this.ollama.chat({
               model: this.deps.config.models.planner,
               messages,
-              tools: toOllamaTools(tools),
-              think: undefined
+              tools: toOllamaTools(tools)
             })
             
             const nextToolCalls = response.message.tool_calls || []

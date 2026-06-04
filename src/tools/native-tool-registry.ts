@@ -250,15 +250,18 @@ function runNodeCode(code: string, cwd: string, timeoutMs: number = 120000, env?
 
     child.on('close', code => {
       clearTimeout(timeoutHandle)
-      resolve({
+      const result: ActionResult = {
         ok: code === 0,
         tool: 'code_execute',
         startedAt,
         finishedAt: new Date().toISOString(),
         stdout,
-        stderr,
-        error: code === 0 ? undefined : `process exited with code ${code ?? -1}`
-      })
+        stderr
+      }
+      if (code !== 0) {
+        result.error = `process exited with code ${code ?? -1}`
+      }
+      resolve(result)
     })
   })
 }
@@ -737,20 +740,30 @@ export class NativeToolRegistry {
           if (!command) {
             throw new Error('shell_execute requires command')
           }
+          const shellParams: { command: string; cwd?: string; timeout?: number } = { command }
+          if (cwd) {
+            shellParams.cwd = cwd
+          }
+          if (timeout) {
+            shellParams.timeout = timeout
+          }
           const result = await this.shellRunner({
             type: 'shell',
             tool: tool as 'powershell' | 'cmd' | 'wsl',
-            params: { command, cwd, timeout }
+            params: shellParams
           })
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok
               ? (result.stdout || result.stderr || 'Completed shell command')
               : (result.stderr || result.error || 'Shell command failed'),
-            error: result.ok ? undefined : result.error,
             metadata: { stdout: result.stdout, stderr: result.stderr }
           }
+          if (!result.ok && result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'app_search': {
           const query = isString(args.query) ? args.query.trim() : ''
@@ -766,13 +779,16 @@ export class NativeToolRegistry {
               timeout: 30000
             }
           })
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok ? (result.stdout || result.stderr || `Searched for ${query}`) : (result.stderr || result.error || 'App search failed'),
-            error: result.ok ? undefined : result.error,
             metadata: { query, limit, stdout: result.stdout, stderr: result.stderr }
           }
+          if (!result.ok && result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'app_open': {
           const query = isString(args.query) ? args.query.trim() : ''
@@ -787,13 +803,16 @@ export class NativeToolRegistry {
               timeout: 30000
             }
           })
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok ? (result.stdout || `Opened ${query}`) : (result.stderr || result.error || 'App open failed'),
-            error: result.ok ? undefined : result.error,
             metadata: { query, stdout: result.stdout, stderr: result.stderr }
           }
+          if (!result.ok && result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'console_finalize': {
           const text = isString(args.text) ? args.text : ''
@@ -824,16 +843,19 @@ export class NativeToolRegistry {
             throw new Error('code_execute requires code')
           }
           const result = await runNodeCode(code, cwd, timeout)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok ? (result.stdout || 'Code executed successfully') : (result.stderr || result.error || 'Code execution failed'),
-            error: result.error,
             metadata: {
               stdout: result.stdout,
               stderr: result.stderr
             }
           }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'fs_read_file': {
           const path = resolvePath(toPath(args.path), context.workspaceRoot)
@@ -923,13 +945,16 @@ export class NativeToolRegistry {
             throw new Error('browser_open requires url')
           }
           const result = await context.browser.open(url)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok ? (result.content || `Opened ${url}`) : result.error || 'Failed to open browser',
-            error: result.error,
             metadata: result.snapshot ? { url, snapshot: result.snapshot } : { url }
           }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_fetch': {
           const url = isString(args.url) ? args.url : ''
@@ -937,13 +962,16 @@ export class NativeToolRegistry {
             throw new Error('browser_fetch requires url')
           }
           const result = await context.browser.open(url)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
             content: result.ok ? (result.snapshot?.content || result.content) : (result.error || 'Failed to fetch page'),
-            error: result.error,
             metadata: result.snapshot ? { url, snapshot: result.snapshot } : { url }
           }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_click': {
           const x = typeof args.x === 'number' ? args.x : undefined
@@ -952,13 +980,18 @@ export class NativeToolRegistry {
             throw new Error('browser_click requires x and y')
           }
           const result = await context.browser.click(x, y)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
-            content: result.ok ? (result.content || `Clicked ${x},${y}`) : (result.error || 'Browser click failed'),
-            error: result.error,
-            metadata: result.snapshot ? { snapshot: result.snapshot } : undefined
+            content: result.ok ? (result.content || `Clicked ${x},${y}`) : (result.error || 'Browser click failed')
           }
+          if (result.snapshot) {
+            execResult.metadata = { snapshot: result.snapshot }
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_type': {
           const text = isString(args.text) ? args.text : ''
@@ -966,13 +999,18 @@ export class NativeToolRegistry {
             throw new Error('browser_type requires text')
           }
           const result = await context.browser.type(text)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
-            content: result.ok ? (result.content || 'Typed text') : (result.error || 'Browser type failed'),
-            error: result.error,
-            metadata: result.snapshot ? { snapshot: result.snapshot } : undefined
+            content: result.ok ? (result.content || 'Typed text') : (result.error || 'Browser type failed')
           }
+          if (result.snapshot) {
+            execResult.metadata = { snapshot: result.snapshot }
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_press': {
           const keys = Array.isArray(args.keys) ? args.keys.filter(isString) : []
@@ -980,32 +1018,45 @@ export class NativeToolRegistry {
             throw new Error('browser_press requires keys')
           }
           const result = await context.browser.press(keys)
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
-            content: result.ok ? (result.content || 'Pressed keys') : (result.error || 'Browser press failed'),
-            error: result.error,
-            metadata: result.snapshot ? { snapshot: result.snapshot } : undefined
+            content: result.ok ? (result.content || 'Pressed keys') : (result.error || 'Browser press failed')
           }
+          if (result.snapshot) {
+            execResult.metadata = { snapshot: result.snapshot }
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_screenshot': {
           const result = await context.browser.screenshot()
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
-            content: result.ok ? (result.content || 'Captured browser screenshot') : (result.error || 'Browser screenshot failed'),
-            error: result.error,
-            metadata: result.snapshot ? { snapshot: result.snapshot } : undefined
+            content: result.ok ? (result.content || 'Captured browser screenshot') : (result.error || 'Browser screenshot failed')
           }
+          if (result.snapshot) {
+            execResult.metadata = { snapshot: result.snapshot }
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'browser_close': {
           const result = await context.browser.close()
-          return {
+          const execResult: NativeToolExecutionResult = {
             ok: result.ok,
             tool: name,
-            content: result.ok ? (result.content || 'Browser closed') : (result.error || 'Browser close failed'),
-            error: result.error
+            content: result.ok ? (result.content || 'Browser closed') : (result.error || 'Browser close failed')
           }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'capture_screen': {
           const snapshot = await captureScreen()
@@ -1032,7 +1083,15 @@ export class NativeToolRegistry {
             tool: 'mouse_click',
             params: { x, y, button: (isString(args.button) ? args.button : 'left') as 'left' | 'right' }
           })
-          return { ok: result.ok, tool: name, content: result.ok ? 'Clicked successfully' : result.error || 'Click failed', error: result.error }
+          const execResult: NativeToolExecutionResult = {
+            ok: result.ok,
+            tool: name,
+            content: result.ok ? 'Clicked successfully' : result.error || 'Click failed'
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'gui_type': {
           const text = isString(args.text) ? args.text : ''
@@ -1044,7 +1103,15 @@ export class NativeToolRegistry {
             tool: 'keyboard_type',
             params: { text }
           })
-          return { ok: result.ok, tool: name, content: result.ok ? 'Typed text successfully' : result.error || 'Typing failed', error: result.error }
+          const execResult: NativeToolExecutionResult = {
+            ok: result.ok,
+            tool: name,
+            content: result.ok ? 'Typed text successfully' : result.error || 'Typing failed'
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'gui_keys': {
           const keys = Array.isArray(args.keys) ? args.keys.filter(isString) : []
@@ -1056,7 +1123,15 @@ export class NativeToolRegistry {
             tool: 'key_combo',
             params: { keys }
           })
-          return { ok: result.ok, tool: name, content: result.ok ? 'Pressed keys successfully' : result.error || 'Key press failed', error: result.error }
+          const execResult: NativeToolExecutionResult = {
+            ok: result.ok,
+            tool: name,
+            content: result.ok ? 'Pressed keys successfully' : result.error || 'Key press failed'
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'gui_scroll': {
           const amount = typeof args.amount === 'number' ? args.amount : undefined
@@ -1068,7 +1143,15 @@ export class NativeToolRegistry {
             tool: 'scroll',
             params: { amount }
           })
-          return { ok: result.ok, tool: name, content: result.ok ? 'Scrolled successfully' : result.error || 'Scroll failed', error: result.error }
+          const execResult: NativeToolExecutionResult = {
+            ok: result.ok,
+            tool: name,
+            content: result.ok ? 'Scrolled successfully' : result.error || 'Scroll failed'
+          }
+          if (result.error) {
+            execResult.error = result.error
+          }
+          return execResult
         }
         case 'mcp_call': {
           const server = isString(args.server) ? args.server : ''
