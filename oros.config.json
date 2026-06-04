@@ -1,7 +1,7 @@
 {
   "models": {
-    "fast": "gemma4:e2b",
-    "planner": "gemma4:e2b",
+    "fast": "llama3:latest",
+    "planner": "gemma4:latest",
     "embeddings": "nomic-embed-text:latest"
   },
   "ollama": {
