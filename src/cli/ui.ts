@@ -94,6 +94,7 @@ async function chatSession(agent: Agent): Promise<void> {
     console.log()
 
     const spinner = ora('Running...').start()
+    spinner.stopAndPersist({ text: 'Agent is working...' })
 
     try {
       const state = await agent.run(text)
