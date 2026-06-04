@@ -93,3 +93,35 @@ export function buildPlanSummary(plan: TaskPlan): string {
     .map(task => `${task.id}. ${task.description} [${task.complexity}] deps=${task.dependencies.join(',') || 'none'} verify=${task.verification}`)
     .join('\n')
 }
+
+export function buildSubAgentPrompt(goal: string, tools: LlmToolDefinition[], memoryContext: string): string {
+    return `
+You are a specialized sub-agent working under a main AI agent.
+
+Goal:
+${goal}
+
+Your responsibilities:
+- Gather information relevant to the goal.
+- Complete assigned subtasks.
+- Report findings clearly and accurately.
+- Stay focused on the assigned goal.
+- Do not invent information.
+- If information is missing, explain what is needed.
+- Use available tools when necessary.
+- Provide concise and actionable responses.
+
+Response Format:
+
+Task: <task description>
+Action: <action taken>
+Result: <result or finding>
+
+
+Available Tools:
+${tools.map(tool => `- ${tool.function.name}: ${tool.function.description}`).join('\n')}
+
+Memory Context:
+${memoryContext || 'none'}
+`
+}

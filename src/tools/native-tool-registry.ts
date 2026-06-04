@@ -12,6 +12,9 @@ import type { OllamaClient } from '../llm/ollama-client.ts'
 import type { Logger } from '../system/logger.ts'
 import type { ContextManager } from '../memory/context-manager.ts'
 import type { BrowserControl } from '../action/browser-controller.ts'
+import { deploySubagent } from '../action/subagent-deployer.ts'
+import { randomUUID } from 'node:crypto'
+import { loadConfig } from '../system/config.ts'
 
 export interface ToolExecutionContext {
   goal: string
@@ -665,6 +668,20 @@ export class NativeToolRegistry {
       {
         type: 'function',
         function: {
+          name: 'deploy_subagent',
+          description: 'Deploy a new sub-agent with a specific goal.',
+          parameters: {
+            type: 'object',
+            properties: {
+              query: { type: 'string' }
+            },
+            required: ['query']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
           name: 'summarize',
           description: 'Summarize recent text for the current goal.',
           parameters: {
@@ -1077,6 +1094,16 @@ export class NativeToolRegistry {
           const result = await context.firecrawl.search({ query, limit })
           return { ok: true, tool: name, content: result.text.slice(0, 12000), metadata: { query, limit } }
         }
+        case 'deploy_subagent': {
+          const query = isString(args.query) ? args.query : ''
+          const limit = typeof args.limit === 'number' ? args.limit : 5
+          if (!query) {
+            throw new Error('deploy_subagent requires query')
+          }
+          const config = await loadConfig()
+          const result = await deploySubagent(randomUUID(), { goal: query }, config)
+          return { ok: true, tool: name, content: result, metadata: { query, limit } }
+        }
         case 'summarize': {
           const text = isString(args.text) ? args.text : ''
           const goal = isString(args.goal) ? args.goal : context.goal
@@ -1122,9 +1149,11 @@ export class NativeToolRegistry {
   }
 }
 
-export function toOllamaTools(tools: NativeToolDefinition[]): OllamaTool[] {
+export function toOllamaTools(
+  tools: NativeToolDefinition[]
+): NativeToolDefinition[] {
   return tools.map(tool => ({
-    type: tool.type,
+    type: 'function' as const,
     function: {
       name: tool.function.name,
       description: tool.function.description,
