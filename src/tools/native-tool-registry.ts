@@ -15,6 +15,7 @@ import type { BrowserControl } from '../action/browser-controller.ts'
 import { deploySubagent } from '../action/subagent-deployer.ts'
 import { randomUUID } from 'node:crypto'
 import { loadConfig } from '../system/config.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 export interface ToolExecutionContext {
   goal: string
@@ -23,7 +24,7 @@ export interface ToolExecutionContext {
   browser: BrowserControl
   mcp: McpHost
   firecrawl: FirecrawlSearchTool
-  ollama: OllamaClient
+  client: UniversalClient
   logger: Logger
   contextManager: ContextManager
   fastModel: string
@@ -1193,7 +1194,7 @@ export class NativeToolRegistry {
           if (!text) {
             throw new Error('summarize requires text')
           }
-          const response = await context.ollama.generate({
+          const response = await context.client.generate({
             model: context.fastModel,
             messages: [
               {

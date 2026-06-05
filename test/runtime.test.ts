@@ -4,7 +4,6 @@ import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createLogger } from '../src/system/logger.ts'
-import { OllamaClient } from '../src/llm/ollama-client.ts'
 import { Planner } from '../src/core/planner.ts'
 import { StructuredStore } from '../src/memory/structured-store.ts'
 import { StateManager } from '../src/core/state-manager.ts'
@@ -12,6 +11,7 @@ import { VectorStore } from '../src/memory/vector-store.ts'
 import { Embedder } from '../src/memory/embedder.ts'
 import { ContextManager } from '../src/memory/context-manager.ts'
 import { buildPlanSummary } from '../src/llm/prompt-engine.ts'
+import { UniversalClient } from '../src/llm/universal-client.ts'
 
 function mockFetchOnce(handler: (url: string, init: RequestInit) => Promise<unknown>): () => void {
   const original = globalThis.fetch
@@ -40,7 +40,7 @@ test('OllamaClient generate and embed work against a mocked fetch implementation
   })
 
   try {
-    const client = new OllamaClient('http://localhost:11434')
+    const client = new UniversalClient(1800000)
     const generated = await client.generate({
       model: 'test-model',
       messages: [{ role: 'user', content: 'Say hello' }]
@@ -136,7 +136,7 @@ test('ContextManager compacts recent history into a lesson', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'oros-context-'))
   const vectorStore = new VectorStore(join(dir, 'episodes.json'))
   const structuredStore = new StructuredStore(dir)
-  const embedder = new Embedder(new OllamaClient('http://localhost:11434'), 'embed-model')
+  const embedder = new Embedder(new UniversalClient(1800000), 'embed-model')
   const contextManager = new ContextManager(vectorStore, embedder, structuredStore, 5)
   const lesson = await contextManager.compactHistory('Open Notepad', [
     {

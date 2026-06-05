@@ -5,7 +5,7 @@ import { createLogger } from './system/logger.ts'
 import { StateManager } from './core/state-manager.ts'
 import { VectorStore } from './memory/vector-store.ts'
 import { StructuredStore } from './memory/structured-store.ts'
-import { OllamaClient } from './llm/ollama-client.ts'
+import { UniversalClient } from './llm/universal-client.ts'
 import { Embedder } from './memory/embedder.ts'
 import { ContextManager } from './memory/context-manager.ts'
 import { McpHost } from './mcp/mcp-host.ts'
@@ -66,12 +66,12 @@ async function runDoctor(configPath: string | undefined): Promise<void> {
   const logger = createLogger()
   logger.info('Loaded configuration', { config })
 
-  const ollama = new OllamaClient(config.ollama.baseUrl)
+  const universalClient = new UniversalClient(10000)
   const planner = new Planner(config.ollama.baseUrl, config.models.planner)
   const dataRoot = getDataRoot()
   const structuredStore = new StructuredStore(resolve(dataRoot, 'memory', 'structured'))
   const vectorStore = new VectorStore(resolve(dataRoot, 'memory', 'vector', 'episodes.json'))
-  const embedder = new Embedder(ollama, config.models.embeddings)
+  const embedder = new Embedder(universalClient, config.models.embeddings)
 
   const results = {
     classification: classifyTask('Open Notepad and type Hello'),
@@ -103,8 +103,8 @@ async function runAgent(command: 'run' | 'resume', goal: string | undefined, tas
   const config = await loadConfig(configPath)
   const logger = createLogger()
   const stateManager = new StateManager()
-  const ollama = new OllamaClient(config.ollama.baseUrl)
-  const embedder = new Embedder(ollama, config.models.embeddings)
+  const universalClient = new UniversalClient(3600000)
+  const embedder = new Embedder(universalClient, config.models.embeddings)
   const dataRoot = getDataRoot()
   const vectorStore = new VectorStore(resolve(dataRoot, 'memory', 'vector', 'episodes.json'))
   const structuredStore = new StructuredStore(resolve(dataRoot, 'memory', 'structured'))
@@ -192,8 +192,8 @@ async function main(): Promise<void> {
     
       const stateManager = new StateManager()
     
-      const ollama = new OllamaClient(config.ollama.baseUrl)
-      const embedder = new Embedder(ollama, config.models.embeddings)
+      const universalClient = new UniversalClient(3600000)
+      const embedder = new Embedder(universalClient, config.models.embeddings)
     
       const dataRoot = getDataRoot()
     

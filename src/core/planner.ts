@@ -1,6 +1,6 @@
 import type { OrosConfig, PlanTask, TaskPlan } from '../types/index.ts'
 import { buildPlannerPrompt } from '../llm/prompt-engine.ts'
-import { OllamaClient } from '../llm/ollama-client.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 function safeParsePlan(text: string, goal: string): TaskPlan | undefined {
   try {
@@ -156,14 +156,14 @@ function heuristicPlan(goal: string): TaskPlan {
 }
 
 export class Planner {
-  private readonly client: OllamaClient
+  private readonly client: UniversalClient
   private readonly baseUrl: string
   private readonly model: string
 
   constructor(baseUrl: string, model: string) {
     this.baseUrl = baseUrl
     this.model = model
-    this.client = new OllamaClient(baseUrl)
+    this.client = new UniversalClient(1800000)
   }
 
   async decompose(goal: string): Promise<TaskPlan> {

@@ -1,5 +1,5 @@
 import type { ScreenAnalysis, ScreenSnapshot } from '../types/index.ts'
-import { OllamaClient } from '../llm/ollama-client.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 export function isVisionModel(modelName: string): boolean {
   const lower = modelName.toLowerCase()
@@ -16,9 +16,9 @@ export function isVisionModel(modelName: string): boolean {
 }
 
 export class ScreenAnalyzer {
-  private readonly client: OllamaClient
+  private readonly client: UniversalClient
 
-  constructor(client: OllamaClient) {
+  constructor(client: UniversalClient) {
     this.client = client
   }
 

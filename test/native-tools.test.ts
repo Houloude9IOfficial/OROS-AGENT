@@ -3,10 +3,10 @@ import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { OllamaClient } from '../src/llm/ollama-client.ts'
 import { NativeToolRegistry } from '../src/tools/native-tool-registry.ts'
 import { SessionConfirmationGate } from '../src/system/confirmation.ts'
 import { PlaywrightBrowserController } from '../src/action/browser-controller.ts'
+import { UniversalClient } from '../src/llm/universal-client.ts'
 
 test('OllamaClient chat forwards tool definitions and returns tool calls', async () => {
   const requests: Array<{ url: string; body: Record<string, unknown> }> = []
@@ -45,7 +45,7 @@ test('OllamaClient chat forwards tool definitions and returns tool calls', async
   }) as typeof fetch
 
   try {
-    const client = new OllamaClient('http://127.0.0.1:11434')
+    const client = new UniversalClient(1800000)
     const response = await client.chat({
       model: 'test-model',
       messages: [{ role: 'user', content: 'write file' }],

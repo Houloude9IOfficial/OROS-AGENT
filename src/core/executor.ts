@@ -2,17 +2,17 @@ import type { AgentState, NativeToolExecutionResult } from '../types/index.ts'
 import { GuiController } from '../action/gui-controller.ts'
 import type { McpHost } from '../mcp/mcp-host.ts'
 import type { FirecrawlSearchTool } from '../tools/firecrawl-search.ts'
-import type { OllamaClient } from '../llm/ollama-client.ts'
 import type { Logger } from '../system/logger.ts'
 import type { ContextManager } from '../memory/context-manager.ts'
 import { NativeToolRegistry, type ToolCall, type ToolExecutionContext } from '../tools/native-tool-registry.ts'
 import { PlaywrightBrowserController } from '../action/browser-controller.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 export interface ExecutorDependencies {
   gui: GuiController
   mcp: McpHost
   firecrawl: FirecrawlSearchTool
-  ollama: OllamaClient
+  client: UniversalClient
   logger: Logger
   contextManager: ContextManager
   fastModel: string
@@ -47,7 +47,7 @@ export class Executor {
       browser: this.browser,
       mcp: this.deps.mcp,
       firecrawl: this.deps.firecrawl,
-      ollama: this.deps.ollama,
+      client: this.deps.client,
       logger: this.deps.logger,
       contextManager: this.deps.contextManager,
       fastModel: this.deps.fastModel,

@@ -1,9 +1,9 @@
 import type { Action, ActionResult } from '../types/index.ts'
-import { OllamaClient } from '../llm/ollama-client.ts'
 import {
   buildPostActionReflectionPrompt,
   buildPreActionReflectionPrompt
 } from '../llm/prompt-engine.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 export interface ReflectionContext {
   goal: string
@@ -156,11 +156,12 @@ function heuristicPostReflection(
 }
 
 export class ReflectionEngine {
-  private readonly client: OllamaClient
+  private readonly client: UniversalClient
   private readonly model: string
 
+
   constructor(baseUrl: string, model: string) {
-    this.client = new OllamaClient(baseUrl)
+    this.client = new UniversalClient(1800000)
     this.model = model
   }
 

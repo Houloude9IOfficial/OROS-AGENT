@@ -1,5 +1,5 @@
 import { createLogger } from '../system/logger.ts'
-import { OllamaClient } from '../llm/ollama-client.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 import type { OrosConfig } from '../types/index.ts'
 import { Executor } from '../core/executor.ts'
 import { ContextManager } from '../memory/context-manager.ts'
@@ -48,14 +48,14 @@ export async function deploySubagent(
             `Deploying subagent ${agentId} with goal "${subagentConfig.goal}"`
         )
 
-        const client = new OllamaClient(userConfig.ollama.baseUrl)
+        const client = new UniversalClient(3600000)
         const dataRoot = getDataRoot()
         
         const executor = new Executor({
               gui: new GuiController(),
               mcp: new McpHost(userConfig.mcpServers),
               firecrawl: new FirecrawlSearchTool(process.env.FIRECRAWL_API_KEY),
-              ollama: client,
+              client: client,
               logger: logger,
               contextManager: new ContextManager(new VectorStore(resolve(dataRoot, 'memory', 'vector', 'episodes.json')), new Embedder(client, userConfig.models.embeddings), new StructuredStore(resolve(dataRoot, 'memory', 'structured')), userConfig.runtime.memoryTopK),
               fastModel: userConfig.models.fast,

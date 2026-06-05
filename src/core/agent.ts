@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import type { Action, ActionResult, AgentChatMessage, AgentState, NativeToolExecutionResult, OrosConfig } from '../types/index.ts'
-import { OllamaClient } from '../llm/ollama-client.ts'
 
 type HistoryToolResult = ActionResult
 import { ScreenAnalyzer, isVisionModel } from '../perception/screen-analyzer.ts'
@@ -17,6 +16,7 @@ import { FirecrawlSearchTool } from '../tools/firecrawl-search.ts'
 import { Executor } from './executor.ts'
 import { toOllamaTools, type ToolCall } from '../tools/native-tool-registry.ts'
 import { SessionConfirmationGate } from '../system/confirmation.ts'
+import { UniversalClient } from '../llm/universal-client.ts'
 
 interface AgentDependencies {
   config: OrosConfig
@@ -258,7 +258,7 @@ function buildFinalConsoleText(goal: string, assistantContent: string): string {
 
 export class Agent {
   private static readonly DEFAULT_MAX_STEPS = 100
-  private readonly ollama: OllamaClient
+  private readonly client: UniversalClient
   private readonly analyzer: ScreenAnalyzer
   private readonly executor: Executor
   private readonly confirmationGate: SessionConfirmationGate
@@ -271,14 +271,14 @@ export class Agent {
 
   constructor(deps: AgentDependencies) {
     this.deps = deps
-    this.ollama = new OllamaClient(deps.config.ollama.baseUrl)
-    this.analyzer = new ScreenAnalyzer(this.ollama)
+    this.client = new UniversalClient(3600000)
+    this.analyzer = new ScreenAnalyzer(this.client)
     this.confirmationGate = new SessionConfirmationGate()
     this.executor = new Executor({
       gui: new GuiController(),
       mcp: deps.mcp,
       firecrawl: new FirecrawlSearchTool(process.env.FIRECRAWL_API_KEY),
-      ollama: this.ollama,
+      client: this.client,
       logger: deps.logger,
       contextManager: deps.contextManager,
       fastModel: deps.config.models.fast,
@@ -294,7 +294,7 @@ export class Agent {
     this.approvedToolCategories.clear()
     this.deps.logger.info('Checking Ollama connection...')
     try {
-      const ping = await this.ollama.ping()
+      const ping = await this.client.ping()
       if (!ping.success) {
         throw new Error('Ollama ping did not return success')
       }
@@ -428,13 +428,13 @@ export class Agent {
 
       let response
       try {
-        response = await this.ollama.chat({
+        response = await this.client.chat({
           model: this.deps.config.models.planner,
           messages,
           tools: toOllamaTools(tools)
         })
       } catch (error) {
-        this.deps.logger.warn('Ollama chat failed; pausing run', { error: error instanceof Error ? error.message : String(error) })
+        this.deps.logger.warn('Chat failed; pausing run', { error: error instanceof Error ? error.message : String(error) })
         state.waitingForUser = true
         await this.deps.stateManager.saveCheckpoint(taskId, state)
         return
@@ -463,7 +463,7 @@ export class Agent {
         })
 
         try {
-            response = await this.ollama.chat({
+            response = await this.client.chat({
               model: this.deps.config.models.planner,
               messages,
               tools: toOllamaTools(tools)
@@ -488,7 +488,7 @@ export class Agent {
                 }
             }
         } catch (error) {
-            this.deps.logger.warn('Ollama chat failed on follow-up; pausing run', { error: error instanceof Error ? error.message : String(error) })
+            this.deps.logger.warn('Chat failed on follow-up; pausing run', { error: error instanceof Error ? error.message : String(error) })
             state.waitingForUser = true
             await this.deps.stateManager.saveCheckpoint(taskId, state)
             return
