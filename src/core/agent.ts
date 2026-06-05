@@ -298,9 +298,9 @@ export class Agent {
       if (!ping.success) {
         throw new Error('Ollama ping did not return success')
       }
-      this.deps.logger.success('Ollama connection successful')
+      this.deps.logger.success(`${ping.client} connection successful (${ping.success})`)
     } catch (error) {
-      this.deps.logger.error('Ollama connection failed')
+      this.deps.logger.error(`Provider connection failed`)
       this.deps.logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`)
 
       // state.waitingForUser = true
@@ -432,7 +432,7 @@ export class Agent {
           model: this.deps.config.models.planner,
           messages,
           tools: toOllamaTools(tools)
-        })
+        });
       } catch (error) {
         this.deps.logger.warn('Chat failed; pausing run', { error: error instanceof Error ? error.message : String(error) })
         state.waitingForUser = true
@@ -467,7 +467,7 @@ export class Agent {
               model: this.deps.config.models.planner,
               messages,
               tools: toOllamaTools(tools)
-            })
+            });
             
             const nextToolCalls = response.message.tool_calls || []
             if (nextToolCalls.length === 0) {

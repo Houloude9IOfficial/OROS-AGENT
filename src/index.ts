@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import { resolve } from 'node:path'
 import { loadConfig, saveConfig } from './system/config.ts'
 import { createLogger } from './system/logger.ts'
@@ -18,6 +18,8 @@ import { buildPlanSummary } from './llm/prompt-engine.ts'
 import { getDataRoot } from './system/paths.ts'
 import { consentHelpLine, ensureAcceptedRisks, saveAcceptedRisks } from './system/consent.ts'
 import { runUI } from './cli/ui.ts'
+
+dotenv.config()
 
 function parseArgs(argv: string[]): { command: string; goal?: string; riskAck: boolean; taskId?: string; configPath?: string } {
   const [command = 'help', ...rest] = argv

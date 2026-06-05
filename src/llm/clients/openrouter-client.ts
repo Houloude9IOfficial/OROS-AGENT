@@ -1,5 +1,5 @@
 import { OpenRouter } from '@openrouter/sdk'
-import type { AgentChatMessage, LlmGenerateOptions, LlmGenerateResponse } from '../types/index.ts'
+import type { AgentChatMessage, LlmGenerateOptions, LlmGenerateResponse } from '../../types/index.ts'
 
 // OpenAI-compatible tool type (what OpenRouter expects)
 type OpenRouterTool = {

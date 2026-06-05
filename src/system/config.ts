@@ -38,22 +38,16 @@ function mergeServerConfig(value: unknown): McpServerConfig | undefined {
   if (!isRecord(value) || typeof value.command !== 'string' || !Array.isArray(value.args)) {
     return undefined
   }
-
-  const env = isRecord(value.env) ? Object.fromEntries(Object.entries(value.env).filter(([, v]) => typeof v === 'string')) as Record<string, string> | undefined : undefined
+  const env = isRecord(value.env) 
+    ? Object.fromEntries(Object.entries(value.env).filter(([, v]) => typeof v === 'string')) as Record<string, string> | undefined 
+    : undefined
 
   const config: McpServerConfig = {
     command: value.command,
     args: value.args.filter((arg): arg is string => typeof arg === 'string')
   }
-
-  if (typeof value.cwd === 'string') {
-    config.cwd = value.cwd
-  }
-
-  if (env) {
-    config.env = env
-  }
-
+  if (typeof value.cwd === 'string') config.cwd = value.cwd
+  if (env) config.env = env
   return config
 }
 
@@ -95,9 +89,21 @@ export async function loadConfig(configPath: string = resolve(process.cwd(), 'or
 }
 
 function applyRuntimeOverrides(config: OrosConfig): OrosConfig {
-  const fastModel = process.env.OROS_FAST_MODEL
-  const plannerModel = process.env.OROS_PLANNER_MODEL
-  const embeddingsModel = process.env.OROS_EMBEDDINGS_MODEL
+  const client = (process.env.CLIENT || 'ollama').toLowerCase().trim()
+  const isOpenRouter = client === 'openrouter'
+
+  const fastModel = isOpenRouter 
+    ? process.env.OPENROUTER_FAST_MODEL 
+    : process.env.OROS_FAST_MODEL
+
+  const plannerModel = isOpenRouter 
+    ? process.env.OPENROUTER_PLANNER_MODEL 
+    : process.env.OROS_PLANNER_MODEL
+
+  const embeddingsModel = isOpenRouter 
+    ? process.env.OPENROUTER_EMBEDDINGS_MODEL 
+    : process.env.OROS_EMBEDDINGS_MODEL
+
   const baseUrl = process.env.OROS_OLLAMA_URL
 
   return {

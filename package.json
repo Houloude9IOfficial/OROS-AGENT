@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "node src/index.ts",
+    "build": "tsc",
     "start": "node src/index.ts",
     "test": "node --test test/all.test.ts",
     "test:coverage": "node --test --experimental-test-coverage test/all.test.ts",
