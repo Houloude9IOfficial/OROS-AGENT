@@ -3,8 +3,9 @@ import type { ChatResponse, Message, Tool as OllamaTool } from 'ollama'
 import type {
   AgentChatMessage,
   LlmGenerateOptions,
-  LlmGenerateResponse
-} from '../types/index.ts'
+  LlmGenerateResponse,
+  NativeToolCall
+} from '../../types/index.ts'
 
 type ChatOptions = {
   model: string
@@ -89,7 +90,7 @@ export class OllamaClient {
           entry.images = message.images
         }
         if (message.tool_calls) {
-          entry.tool_calls = message.tool_calls.map(call => ({
+          entry.tool_calls = message.tool_calls.map((call: NativeToolCall) => ({
             function: {
               name: call.function.name,
               arguments: call.function.arguments
@@ -126,9 +127,9 @@ export class OllamaClient {
   async generate(options: LlmGenerateOptions): Promise<LlmGenerateResponse> {
     const request: Parameters<Ollama['chat']>[0] = {
       model: options.model,
-      messages: options.messages.map(message => {
+      messages: options.messages.map((message: { role: string; content: string }) => {
         const entry: Message = {
-          role: message.role,
+          role: message.role as 'system' | 'user' | 'assistant',
           content: message.content
         }
         if (message.role === 'user' && options.images && options.images.length > 0) {

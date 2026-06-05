@@ -14,6 +14,6 @@ test('Planner research heuristic does not treat file-write goals as typing tasks
   const goal = "Search up only about Nvidia's latest release (yesterday). Then analyze it, summarize it and write it in a nvidia.txt and save it C:\\Users\\USER\\Documents\\VSCODE_Laptop\\OROS\\prompt_testing"
   const plan = await planner.decompose(goal)
   assert.ok(plan.tasks.length >= 3)
-  assert.doesNotMatch(plan.tasks[0].description, /Enter the required text/i)
-  assert.match(plan.tasks[0].description, /Search/i)
+  assert.doesNotMatch(plan.tasks[0]?.description || '', /Enter the required text/i)
+  assert.match(plan.tasks[0]?.description || '', /Search/i)
 })

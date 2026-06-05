@@ -20,11 +20,15 @@ export class StateManager {
     const checkpoint: AgentCheckpoint = {
       goal: state.goal,
       history: state.history,
-      plan: state.plan,
-      currentTaskId: state.currentTaskId,
       paused: state.paused,
       stopped: state.stopped,
       updatedAt: new Date().toISOString()
+    }
+    if (state.plan) {
+      checkpoint.plan = state.plan
+    }
+    if (state.currentTaskId) {
+      checkpoint.currentTaskId = state.currentTaskId
     }
     await writeFile(filePath, `${JSON.stringify(checkpoint, null, 2)}\n`, 'utf8')
   }
@@ -47,13 +51,16 @@ export class StateManager {
   }
 
   createInitialState(goal: string, plan?: AgentCheckpoint['plan']): AgentState {
-    return {
+    const state: AgentState = {
       goal,
       history: [],
-      plan,
       paused: false,
       stopped: false,
       waitingForUser: false
     }
+    if (plan) {
+      state.plan = plan
+    }
+    return state
   }
 }

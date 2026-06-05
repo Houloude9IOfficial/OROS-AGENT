@@ -19,11 +19,12 @@ export class HotkeyListener {
   async start(): Promise<() => void> {
     try {
       const module = await import('node-global-key-listener')
-      const Listener = module.GlobalKeyboardListener as new () => {
-        addListener: (callback: (event: { name?: string; state?: string }) => void) => () => void
+      const Listener = module.GlobalKeyboardListener as new (config?: unknown) => {
+        addListener: (callback: (event: { name?: string; state?: string }) => void) => Promise<void>
+        removeListener: (callback: (event: { name?: string; state?: string }) => void) => void
       }
       const listener = new Listener()
-      const unsubscribe = listener.addListener(event => {
+      const callback = (event: { name?: string; state?: string }) => {
         const key = (event.name || '').toLowerCase()
         if (key === 'pause') {
           void this.handler({ type: 'pause', source: 'global-hotkey' })
@@ -31,7 +32,9 @@ export class HotkeyListener {
         if (key === 'end') {
           void this.handler({ type: 'stop', source: 'global-hotkey' })
         }
-      })
+      }
+      await listener.addListener(callback)
+      const unsubscribe = () => listener.removeListener(callback)
       this.stopSignals.add(unsubscribe)
     } catch {
       this.stdinInterface.on('line', line => {

@@ -35,7 +35,7 @@ export async function resolveTemplatePath(imageQuery: string): Promise<string> {
       return candidate
     }
   }
-  return candidates[0]
+  return candidates[0]!
 }
 
 export async function findTemplateOnImage(screenPath: string, templatePath: string): Promise<TemplateMatchResult | undefined> {

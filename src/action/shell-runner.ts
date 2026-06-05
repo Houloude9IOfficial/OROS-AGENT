@@ -70,15 +70,18 @@ export async function runShellAction(action: ShellAction, options: ShellRunOptio
 
     child.on('close', code => {
       clearTimeout(timeoutHandle)
-      resolve({
+      const result: ActionResult = {
         ok: code === 0,
         tool: action.tool,
         startedAt,
         finishedAt: new Date().toISOString(),
         stdout,
-        stderr,
-        error: code === 0 ? undefined : `process exited with code ${code ?? -1}`
-      })
+        stderr
+      }
+      if (code !== 0) {
+        result.error = `process exited with code ${code ?? -1}`
+      }
+      resolve(result)
     })
   })
 }

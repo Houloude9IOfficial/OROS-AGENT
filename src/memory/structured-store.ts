@@ -18,9 +18,11 @@ function parseStructured(content: string): unknown {
       }
       if (line.includes(':') && !line.startsWith('-')) {
         const [key, ...rest] = line.split(':')
-        currentKey = key.trim()
-        const value = rest.join(':').trim()
-        data[currentKey] = value ? value : []
+        if (key) {
+          currentKey = key.trim()
+          const value = rest.join(':').trim()
+          data[currentKey] = value ? value : []
+        }
         continue
       }
       if (line.startsWith('-') && currentKey) {

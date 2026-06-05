@@ -43,10 +43,12 @@ function bodyText(page: Page): Promise<string> {
 
 async function launchBrowser(preferredChannel?: 'chrome' | 'msedge'): Promise<Browser> {
   const { chromium } = await import('playwright')
-  const launchOptions = {
-    headless: false,
-    channel: preferredChannel
-  } as const
+  const launchOptions: { headless: boolean; channel?: 'chrome' | 'msedge' } = {
+    headless: false
+  }
+  if (preferredChannel) {
+    launchOptions.channel = preferredChannel
+  }
 
   try {
     return await chromium.launch(launchOptions)

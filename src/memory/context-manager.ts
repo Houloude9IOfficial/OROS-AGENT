@@ -1,4 +1,4 @@
-import type { Episode, MemoryQueryResult } from '../types/index.ts'
+import type { Episode, MemoryQueryResult, AgentHistoryEntry } from '../types/index.ts'
 import type { VectorStore } from './vector-store.ts'
 import type { Embedder } from './embedder.ts'
 import type { StructuredStore } from './structured-store.ts'
@@ -37,10 +37,11 @@ export class ContextManager {
     await this.vectorStore.addEpisode(episode)
   }
 
-  async compactHistory(goal: string, history: Array<{ action: { type: string; tool: string }; result: { ok: boolean; stdout?: string; error?: string } }>): Promise<Lesson> {
+  async compactHistory(goal: string, history: AgentHistoryEntry[]): Promise<Lesson> {
     const evidence = history.slice(-5).map(entry => {
       const outcome = entry.result.ok ? entry.result.stdout || 'success' : entry.result.error || 'failed'
-      return `${entry.action.type}:${entry.action.tool} -> ${outcome}`
+      const tool = entry.action.type === 'internal' ? entry.action.tool : entry.action.type
+      return `${entry.action.type}:${tool} -> ${outcome}`
     })
     const summary = `Recent progress on ${goal}: ${evidence.join('; ')}`
     const lesson: Lesson = {

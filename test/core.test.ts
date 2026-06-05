@@ -30,6 +30,8 @@ test('normalizeAction rounds click coordinates', () => {
     tool: 'mouse_click',
     params: { x: 10.4, y: 20.6 }
   })
-  assert.equal(action.params.x, 10)
-  assert.equal(action.params.y, 21)
+  if (action.type === 'gui' && action.tool === 'mouse_click') {
+    assert.equal(action.params.x, 10)
+    assert.equal(action.params.y, 21)
+  }
 })

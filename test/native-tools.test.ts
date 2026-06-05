@@ -101,6 +101,7 @@ test('NativeToolRegistry edits files and refuses missing replacements', async ()
   await writeFile(filePath, 'alpha beta', 'utf8')
 
   const registry = new NativeToolRegistry()
+  const client = new UniversalClient(1800000)
   const editResult = await registry.execute({
     function: {
       name: 'fs_edit_file',
@@ -109,6 +110,7 @@ test('NativeToolRegistry edits files and refuses missing replacements', async ()
   }, {
     goal: 'edit',
     state: { goal: 'edit', history: [], paused: false, stopped: false, waitingForUser: false },
+    client,
     gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
     browser: {
       async open() { return { ok: false, content: '', error: 'unused' } },
@@ -121,8 +123,7 @@ test('NativeToolRegistry edits files and refuses missing replacements', async ()
     } as any,
     mcp: { async callTool() { return {} } } as any,
     firecrawl: { async search() { return { text: '' } } } as any,
-    ollama: { async generate() { return { text: '' } } } as any,
-    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
     contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
     fastModel: 'test',
     workspaceRoot: dir
@@ -139,6 +140,7 @@ test('NativeToolRegistry edits files and refuses missing replacements', async ()
   }, {
     goal: 'edit',
     state: { goal: 'edit', history: [], paused: false, stopped: false, waitingForUser: false },
+    client,
     gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
     browser: {
       async open() { return { ok: false, content: '', error: 'unused' } },
@@ -151,8 +153,7 @@ test('NativeToolRegistry edits files and refuses missing replacements', async ()
     } as any,
     mcp: { async callTool() { return {} } } as any,
     firecrawl: { async search() { return { text: '' } } } as any,
-    ollama: { async generate() { return { text: '' } } } as any,
-    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
     contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
     fastModel: 'test',
     workspaceRoot: dir
@@ -214,15 +215,16 @@ test('NativeToolRegistry can drive browser tools through the controller', async 
   }
 
   const registry = new NativeToolRegistry()
+  const client = new UniversalClient(1800000)
   const baseContext = {
     goal: 'browser',
     state: { goal: 'browser', history: [], paused: false, stopped: false, waitingForUser: false },
+    client,
     gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
     browser: browser as any,
     mcp: { async callTool() { return {} } } as any,
     firecrawl: { async search() { return { text: '' } } } as any,
-    ollama: { async generate() { return { text: '' } } } as any,
-    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
     contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
     fastModel: 'test',
     workspaceRoot: process.cwd()
@@ -278,9 +280,11 @@ test('NativeToolRegistry can search and open apps via the shell runner', async (
     }
   })
 
+  const client = new UniversalClient(1800000)
   const context = {
     goal: 'search apps',
     state: { goal: 'search apps', history: [], paused: false, stopped: false, waitingForUser: false },
+    client,
     gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
     browser: {
       async open() { return { ok: false, content: '', error: 'unused' } },
@@ -293,8 +297,7 @@ test('NativeToolRegistry can search and open apps via the shell runner', async (
     } as any,
     mcp: { async callTool() { return {} } } as any,
     firecrawl: { async search() { return { text: '' } } } as any,
-    ollama: { async generate() { return { text: '' } } } as any,
-    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
     contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
     fastModel: 'test',
     workspaceRoot: process.cwd()
@@ -329,9 +332,11 @@ test('NativeToolRegistry can search the workspace with literal and regex queries
   await writeFile(join(nested, 'deep.md'), 'alpha beta\ngamma hello\n', 'utf8')
 
   const registry = new NativeToolRegistry()
+  const client = new UniversalClient(1800000)
   const baseContext = {
     goal: 'search files',
     state: { goal: 'search files', history: [], paused: false, stopped: false, waitingForUser: false },
+    client,
     gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
     browser: {
       async open() { return { ok: false, content: '', error: 'unused' } },
@@ -344,8 +349,7 @@ test('NativeToolRegistry can search the workspace with literal and regex queries
     } as any,
     mcp: { async callTool() { return {} } } as any,
     firecrawl: { async search() { return { text: '' } } } as any,
-    ollama: { async generate() { return { text: '' } } } as any,
-    logger: { debug() {}, info() {}, warn() {}, error() {} },
+    logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
     contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
     fastModel: 'test',
     workspaceRoot: dir
@@ -386,6 +390,7 @@ test('NativeToolRegistry can clear the console and print a final response', asyn
 
   try {
     const registry = new NativeToolRegistry()
+    const client = new UniversalClient(1800000)
     const result = await registry.execute({
       function: {
         name: 'console_finalize',
@@ -394,6 +399,7 @@ test('NativeToolRegistry can clear the console and print a final response', asyn
     }, {
       goal: 'finalize',
       state: { goal: 'finalize', history: [], paused: false, stopped: false, waitingForUser: false },
+      client,
       gui: { execute: async () => ({ ok: true, tool: 'gui', startedAt: '', finishedAt: '' }) } as any,
       browser: {
         async open() { return { ok: false, content: '', error: 'unused' } },
@@ -406,8 +412,7 @@ test('NativeToolRegistry can clear the console and print a final response', asyn
       } as any,
       mcp: { async callTool() { return {} } } as any,
       firecrawl: { async search() { return { text: '' } } } as any,
-      ollama: { async generate() { return { text: '' } } } as any,
-      logger: { debug() {}, info() {}, warn() {}, error() {} },
+      logger: { debug() {}, info() {}, warn() {}, error() {}, success() {}, other() {} },
       contextManager: { async getRelevantContext() { return { summary: '', episodes: [] } } } as any,
       fastModel: 'test',
       workspaceRoot: process.cwd()

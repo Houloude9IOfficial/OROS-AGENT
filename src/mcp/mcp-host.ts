@@ -30,16 +30,20 @@ class JsonRpcClient {
 
   constructor(process: ReturnType<typeof spawn>) {
     this.process = process
-    process.stdout.on('data', chunk => {
-      this.buffer = Buffer.concat([this.buffer, Buffer.from(chunk)])
-      this.consume()
-    })
-    process.stderr.on('data', chunk => {
-      const text = chunk.toString().trim()
-      if (text) {
-        console.error(`[MCP ${process.pid}] ${text}`)
-      }
-    })
+    if (process.stdout) {
+      process.stdout.on('data', chunk => {
+        this.buffer = Buffer.concat([this.buffer, Buffer.from(chunk)])
+        this.consume()
+      })
+    }
+    if (process.stderr) {
+      process.stderr.on('data', chunk => {
+        const text = chunk.toString().trim()
+        if (text) {
+          console.error(`[MCP ${process.pid}] ${text}`)
+        }
+      })
+    }
     process.on('exit', () => {
       for (const pending of this.pending.values()) {
         pending.reject(new Error('MCP process exited'))
@@ -89,16 +93,20 @@ class JsonRpcClient {
     const payload: JsonRpcRequest = {
       jsonrpc: '2.0',
       id,
-      method,
-      params
+      method
+    }
+    if (params !== undefined) {
+      payload.params = params
     }
 
     const promise = new Promise<T>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject })
+      this.pending.set(id, { resolve: (value: unknown) => resolve(value as T), reject })
     })
 
     const body = JSON.stringify(payload)
-    this.process.stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`)
+    if (this.process.stdin) {
+      this.process.stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`)
+    }
     return await promise
   }
 
@@ -109,7 +117,9 @@ class JsonRpcClient {
       params
     }
     const body = JSON.stringify(payload)
-    this.process.stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`)
+    if (this.process.stdin) {
+      this.process.stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`)
+    }
   }
 }
 
