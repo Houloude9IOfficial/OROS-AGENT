@@ -90,32 +90,38 @@ export async function loadConfig(configPath: string = resolve(process.cwd(), 'or
 
 function applyRuntimeOverrides(config: OrosConfig): OrosConfig {
   const client = (process.env.CLIENT || 'ollama').toLowerCase().trim()
-  const isOpenRouter = client === 'openrouter'
+  
+  // Define prefix for environment variables based on client
+  let prefix: string
+  switch (client) {
+    case 'openrouter':
+      prefix = 'OPENROUTER'
+      break
+    case 'mistral':
+      prefix = 'MISTRAL'
+      break
+    case 'ollama':
+    default:
+      prefix = 'OROS' // fallback for ollama and others
+      break
+  }
 
-  const fastModel = isOpenRouter 
-    ? process.env.OPENROUTER_FAST_MODEL 
-    : process.env.OROS_FAST_MODEL
+  const fastModel = process.env[`${prefix}_FAST_MODEL`] || config.models.fast
+  const plannerModel = process.env[`${prefix}_PLANNER_MODEL`] || config.models.planner
+  const embeddingsModel = process.env[`${prefix}_EMBEDDINGS_MODEL`] || config.models.embeddings
 
-  const plannerModel = isOpenRouter 
-    ? process.env.OPENROUTER_PLANNER_MODEL 
-    : process.env.OROS_PLANNER_MODEL
-
-  const embeddingsModel = isOpenRouter 
-    ? process.env.OPENROUTER_EMBEDDINGS_MODEL 
-    : process.env.OROS_EMBEDDINGS_MODEL
-
-  const baseUrl = process.env.OROS_OLLAMA_URL
+  const baseUrl = process.env.OROS_OLLAMA_URL || config.ollama?.baseUrl
 
   return {
     ...config,
     models: {
-      fast: fastModel || config.models.fast,
-      planner: plannerModel || config.models.planner,
-      embeddings: embeddingsModel || config.models.embeddings
+      fast: fastModel,
+      planner: plannerModel,
+      embeddings: embeddingsModel
     },
     ollama: {
-      baseUrl: baseUrl || config.ollama.baseUrl
-    }
+      baseUrl: baseUrl
+    },
   }
 }
 

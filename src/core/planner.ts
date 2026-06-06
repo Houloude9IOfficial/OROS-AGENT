@@ -163,7 +163,7 @@ export class Planner {
   constructor(baseUrl: string, model: string) {
     this.baseUrl = baseUrl
     this.model = model
-    this.client = new UniversalClient(1800000)
+    this.client = new UniversalClient(1800000, process.env)
   }
 
   async decompose(goal: string): Promise<TaskPlan> {

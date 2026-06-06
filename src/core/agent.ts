@@ -271,7 +271,7 @@ export class Agent {
 
   constructor(deps: AgentDependencies) {
     this.deps = deps
-    this.client = new UniversalClient(3600000)
+    this.client = new UniversalClient(3600000, process.env)
     this.analyzer = new ScreenAnalyzer(this.client)
     this.confirmationGate = new SessionConfirmationGate()
     this.executor = new Executor({
@@ -292,13 +292,13 @@ export class Agent {
     this.paused = false
     this.stopped = false
     this.approvedToolCategories.clear()
-    this.deps.logger.info('Checking Ollama connection...')
+    this.deps.logger.info('Checking Provider connection...')
     try {
       const ping = await this.client.ping()
       if (!ping.success) {
-        throw new Error('Ollama ping did not return success')
+        throw new Error('Provider ping did not return success')
       }
-      this.deps.logger.success(`${ping.client} connection successful (${ping.success})`)
+      this.deps.logger.success(`${ping.client} connection successful`)
     } catch (error) {
       this.deps.logger.error(`Provider connection failed`)
       this.deps.logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`)

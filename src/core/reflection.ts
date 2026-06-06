@@ -161,7 +161,7 @@ export class ReflectionEngine {
 
 
   constructor(baseUrl: string, model: string) {
-    this.client = new UniversalClient(1800000)
+    this.client = new UniversalClient(1800000, process.env)
     this.model = model
   }
 

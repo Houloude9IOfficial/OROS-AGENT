@@ -48,7 +48,7 @@ export async function deploySubagent(
             `Deploying subagent ${agentId} with goal "${subagentConfig.goal}"`
         )
 
-        const client = new UniversalClient(3600000)
+        const client = new UniversalClient(3600000, process.env)
         const dataRoot = getDataRoot()
         
         const executor = new Executor({
