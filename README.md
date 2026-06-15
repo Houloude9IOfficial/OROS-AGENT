@@ -1,3 +1,19 @@
+<div align="center">
+  <img
+    src="https://github.com/Houloude9IOfficial/OROS-AGENT/blob/main/assets/oros-logo-grey.png?raw=true"
+    alt="OROS Agent Thumbnail"
+    width="200"
+  />
+</div>
+<div align="center">
+  <img
+    src="https://github.com/Houloude9IOfficial/OROS-AGENT/blob/main/assets/OrosThumbnail.png?raw=true"
+    alt="OROS Agent Thumbnail"
+    width="600"
+  />
+</div>
+
+
 # OROS
 
 OROS is a local-first, universally applicable autonomous agent runtime for Windows. It operates your machine by perceiving its environment (screen captures, file system reads, web search), reasoning step-by-step using local Ollama models, and executing actions through GUI automation, shell commands, and MCP tools. 
