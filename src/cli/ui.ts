@@ -12,10 +12,10 @@ export interface UiDependencies {
 export async function runUI(deps: UiDependencies): Promise<void> {
   const { agent } = deps
 
-  while (true) {
-    console.clear()
-    printHeader()
+  console.clear()
+  printHeader()
 
+  while (true) {
     const { action } = await inquirer.prompt([
       {
         type: 'select',
@@ -36,11 +36,15 @@ export async function runUI(deps: UiDependencies): Promise<void> {
 
     if (action === 'help') {
       await showHelp()
+      console.clear()
+      printHeader()
       continue
     }
 
     if (action === 'chat') {
       await chatSession(agent)
+      console.clear()
+      printHeader()
     }
   }
 }
@@ -50,10 +54,10 @@ export async function runUI(deps: UiDependencies): Promise<void> {
 async function chatSession(agent: Agent): Promise<void> {
   let lastResult: any = null
 
-  while (true) {
-    console.clear()
-    printHeader()
+  console.clear()
+  printHeader()
 
+  while (true) {
     console.log(chalk.gray('Type /menu to return to main menu'))
     console.log(chalk.gray('Type /help for commands'))
     console.log()
@@ -83,13 +87,13 @@ async function chatSession(agent: Agent): Promise<void> {
     if (text === '/menu') return
     if (text === '/help') {
       await showHelp()
+      console.clear()
+      printHeader()
       continue
     }
     if (!text) continue
 
-    console.clear()
-    printHeader()
-
+    console.log()
     console.log(chalk.blue('[OROS] Spinning up agent...'))
     console.log()
 
@@ -111,13 +115,19 @@ async function chatSession(agent: Agent): Promise<void> {
       console.log()
 
       await pauseToReturn()
+      console.clear()
+      printHeader()
     } catch (err) {
       spinner.fail('Failed')
 
+      console.log()
       console.log(chalk.red('Error:'))
-      console.log(err instanceof Error ? err.message : String(err))
+      console.log(chalk.red(err instanceof Error ? err.message : String(err)))
+      console.log()
 
       await pauseToReturn()
+      console.clear()
+      printHeader()
     }
   }
 }

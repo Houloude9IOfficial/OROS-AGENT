@@ -11,6 +11,7 @@
     "dev": "node src/index.ts",
     "build": "tsc",
     "start": "node src/index.ts",
+    "ui": "node src/index.ts ui",
     "test": "node --test test/all.test.ts",
     "test:coverage": "node --test --experimental-test-coverage test/all.test.ts",
     "doctor": "node src/index.ts doctor"

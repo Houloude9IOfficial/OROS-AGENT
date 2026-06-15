@@ -61,13 +61,17 @@ export class OllamaClient {
   }
 
   async ping(): Promise<{ success: boolean }> {
-    const response = await fetch(`${this.baseUrl}`, { signal: AbortSignal.timeout(this.timeoutMs) })
-    if (!response.ok) {
-      throw new Error(`Ollama ping failed with status ${response.status}: ${response.statusText}`)
-    } else {
-      return {
-        success: true
+    try {
+      const response = await fetch(`${this.baseUrl}`, { signal: AbortSignal.timeout(Math.min(this.timeoutMs, 5000)) })
+      if (!response.ok) {
+        throw new Error(`Ollama ping failed with status ${response.status}: ${response.statusText}`)
       }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError' || error.message.includes('fetch failed'))) {
+        throw new Error(`Ollama is not responding at ${this.baseUrl}. Please ensure Ollama is running and accessible.`)
+      }
+      throw error
     }
   }
 

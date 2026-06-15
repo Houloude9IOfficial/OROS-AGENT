@@ -301,11 +301,10 @@ export class Agent {
       this.deps.logger.success(`${ping.client} connection successful`)
     } catch (error) {
       this.deps.logger.error(`Provider connection failed`)
-      this.deps.logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      this.deps.logger.error(`Error: ${errorMessage}`)
 
-      // state.waitingForUser = true
-      // await this.deps.stateManager.saveCheckpoint(taskId, state)
-      return state
+      throw new Error(`Provider connection failed: ${errorMessage}`)
     }
 
     state.currentTaskId = taskId
