@@ -100,6 +100,9 @@ function applyRuntimeOverrides(config: OrosConfig): OrosConfig {
     case 'mistral':
       prefix = 'MISTRAL'
       break
+    case 'custom':
+      prefix = 'CUSTOM'
+      break
     case 'ollama':
     default:
       prefix = 'OROS' // fallback for ollama and others
@@ -110,7 +113,7 @@ function applyRuntimeOverrides(config: OrosConfig): OrosConfig {
   const plannerModel = process.env[`${prefix}_PLANNER_MODEL`] || config.models.planner
   const embeddingsModel = process.env[`${prefix}_EMBEDDINGS_MODEL`] || config.models.embeddings
 
-  const baseUrl = process.env.OROS_OLLAMA_URL || config.ollama?.baseUrl
+  const baseUrl = process.env.CUSTOM_API_URL || process.env.OROS_OLLAMA_URL || config.ollama?.baseUrl
 
   return {
     ...config,

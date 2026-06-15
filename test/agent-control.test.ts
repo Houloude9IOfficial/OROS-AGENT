@@ -10,7 +10,8 @@ function createAgent(overrides: Record<string, unknown> = {}): Agent {
       debug() {},
       info() {},
       warn() {},
-      error() {}
+      error() {},
+      success() {}
     },
     stateManager: {
       createInitialState(goal: string) {
@@ -46,44 +47,62 @@ test('Agent executes tool calls and stops on a final response', async () => {
   const chatCalls: unknown[] = []
   const executedCalls: unknown[] = []
 
-  ;(agent as any).ollama = {
-    async chat(request: { messages: Array<{ role: string; content: string }>; tools?: unknown[] }) {
+  ;(agent as any).client = {
+    async ping() {
+      return { success: true, client: 'ollama' }
+    },
+    async chat(request: any) {
       chatCalls.push(request)
       if (chatCalls.length === 1) {
         return {
-          message: {
-            role: 'assistant',
-            content: '',
-            tool_calls: [
-              {
-                function: {
-                  name: 'fs_write_file',
-                  arguments: { path: 'temp/agent-control.txt', content: 'hello' }
-                }
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: '',
+                tool_calls: [
+                  {
+                    function: {
+                      name: 'fs_write_file',
+                      arguments: { path: 'temp/agent-control.txt', content: 'hello' }
+                    }
+                  }
+                ]
               }
-            ]
-          }
+            }
+          ]
         }
       }
       if (chatCalls.length === 2) {
         return {
-          message: {
-            role: 'assistant',
-            content: 'Task complete',
-            tool_calls: []
-          }
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: 'I will now finish.',
+                tool_calls: []
+              }
+            }
+          ]
         }
       }
       return {
-        message: {
-          role: 'assistant',
-          content: JSON.stringify({
-            complete: true,
-            reason: 'Goal achieved',
-            nextInstruction: ''
-          }),
-          tool_calls: []
-        }
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'Task complete',
+              tool_calls: [
+                {
+                  function: {
+                    name: 'console_finalize',
+                    arguments: { complete: true, reason: 'Goal achieved' }
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     }
   }
@@ -139,15 +158,55 @@ test('Agent falls back to open-app and typing tools when the model omits tool ca
   const chatCalls: unknown[] = []
   const executedCalls: Array<{ function: { name: string; arguments: Record<string, unknown> } }> = []
 
-  ;(agent as any).ollama = {
-    async chat(request: { messages: Array<{ role: string; content: string }>; tools?: unknown[] }) {
+  ;(agent as any).client = {
+    async ping() {
+      return { success: true, client: 'ollama' }
+    },
+    async chat(request: any) {
       chatCalls.push(request)
-      return {
-        message: {
-          role: 'assistant',
-          content: 'Continuing',
-          tool_calls: []
+      if (chatCalls.length === 1) {
+        return {
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: 'I will open notepad',
+                tool_calls: []
+              }
+            }
+          ]
         }
+      }
+      if (chatCalls.length === 2) {
+        return {
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: 'I will type "hello"',
+                tool_calls: []
+              }
+            }
+          ]
+        }
+      }
+      return {
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'Finished',
+              tool_calls: [
+                {
+                  function: {
+                    name: 'console_finalize',
+                    arguments: { complete: true }
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     }
   }

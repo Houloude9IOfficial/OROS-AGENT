@@ -2,15 +2,16 @@ import type { AgentChatMessage, LlmGenerateOptions, LlmGenerateResponse } from '
 import { OpenRouterClient } from './clients/openrouter-client.ts';
 import { OllamaClient } from './clients/ollama-client.ts';
 import { MistralClient } from './clients/mistral-client.ts';
+import { CustomClient } from './clients/custom-client.ts';
 
 export class UniversalClient {
-  private readonly client: OpenRouterClient | OllamaClient | MistralClient;
+  private readonly client: OpenRouterClient | OllamaClient | MistralClient | CustomClient;
   private readonly clientType: string;
   private readonly processEnv: NodeJS.ProcessEnv;
 
-  constructor(timeoutMs: number = 3600000, env: NodeJS.ProcessEnv) {
+  constructor(timeoutMs: number = 3600000, env: NodeJS.ProcessEnv = process.env) {
     this.processEnv = env;
-    this.clientType = this.processEnv.CLIENT?.toLowerCase().trim() || 'ollama';
+    this.clientType = (this.processEnv?.CLIENT || 'ollama').toLowerCase().trim();
     
     console.log(`[UniversalClient] Initializing with CLIENT=${this.clientType}`);
 
@@ -25,6 +26,10 @@ export class UniversalClient {
       const apiKey = this.processEnv.MISTRAL_API_KEY;
       if (!apiKey) throw new Error('MISTRAL_API_KEY is required when CLIENT=mistral');
       this.client = new MistralClient(apiKey, timeoutMs);
+    } else if (this.clientType === 'custom') {
+      const baseUrl = this.processEnv.CUSTOM_API_URL || 'http://127.0.0.1:31415/v1/chat/completions';
+      const apiKey = this.processEnv.CUSTOM_API_KEY;
+      this.client = new CustomClient(baseUrl, apiKey, timeoutMs);
     } else {
       throw new Error(`Unsupported CLIENT: ${this.clientType}`);
     }

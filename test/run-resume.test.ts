@@ -11,6 +11,7 @@ function makeEnv(dataDir: string): NodeJS.ProcessEnv {
     ...process.env,
     OROS_DATA_DIR: dataDir,
     OROS_ACCEPT_RISKS: '1',
+    OROS_SKIP_PING: '1',
     OROS_OLLAMA_URL: 'http://127.0.0.1:0'
   }
 }

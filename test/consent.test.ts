@@ -6,9 +6,11 @@ import { join } from 'node:path'
 import { envAcceptedRisks, ensureAcceptedRisks, saveAcceptedRisks } from '../src/system/consent.ts'
 
 test('envAcceptedRisks reads npm config style env vars', () => {
+  const originalOROS = process.env.OROS_ACCEPT_RISKS
   const original = process.env.npm_config_i_understand_the_risks
   const originalArgv = process.env.npm_config_argv
   try {
+    delete process.env.OROS_ACCEPT_RISKS
     process.env.npm_config_i_understand_the_risks = 'true'
     assert.equal(envAcceptedRisks(), true)
     process.env.npm_config_i_understand_the_risks = ''
@@ -18,6 +20,7 @@ test('envAcceptedRisks reads npm config style env vars', () => {
     })
     assert.equal(envAcceptedRisks(), true)
   } finally {
+    process.env.OROS_ACCEPT_RISKS = originalOROS
     process.env.npm_config_i_understand_the_risks = original
     process.env.npm_config_argv = originalArgv
   }

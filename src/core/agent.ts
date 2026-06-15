@@ -292,19 +292,21 @@ export class Agent {
     this.paused = false
     this.stopped = false
     this.approvedToolCategories.clear()
-    this.deps.logger.info('Checking Provider connection...')
-    try {
-      const ping = await this.client.ping()
-      if (!ping.success) {
-        throw new Error('Provider ping did not return success')
-      }
-      this.deps.logger.success(`${ping.client} connection successful`)
-    } catch (error) {
-      this.deps.logger.error(`Provider connection failed`)
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.deps.logger.error(`Error: ${errorMessage}`)
+    if (process.env.OROS_SKIP_PING !== '1') {
+      this.deps.logger.info('Checking Provider connection...')
+      try {
+        const ping = await this.client.ping()
+        if (!ping.success) {
+          throw new Error('Provider ping did not return success')
+        }
+        this.deps.logger.success(`${ping.client} connection successful`)
+      } catch (error) {
+        this.deps.logger.error(`Provider connection failed`)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        this.deps.logger.error(`Error: ${errorMessage}`)
 
-      throw new Error(`Provider connection failed: ${errorMessage}`)
+        throw new Error(`Provider connection failed: ${errorMessage}`)
+      }
     }
 
     state.currentTaskId = taskId
@@ -439,7 +441,7 @@ export class Agent {
         return
       }
 
-      const assistantMessage = response.message
+      const assistantMessage = response.choices[0].message
       const toolCalls = assistantMessage.tool_calls || []
 
       // Add assistant message to context
@@ -453,7 +455,22 @@ export class Agent {
       messages.push(assistantMsg)
 
       if (toolCalls.length === 0) {
-        // Model didn't call any tools. Ask it to use a tool or finish.
+        // Model didn't call any tools. We can either stop or try to infer a tool if it looks like it wants to open an app.
+        const text = assistantMessage.content || ''
+        const appMatch = text.match(/open\s+([a-zA-Z0-9\s]+)/i)
+        if (appMatch) {
+            const toolCall = { function: { name: 'app_open', arguments: { appName: appMatch[1].trim() } } }
+            await executeToolCall(toolCall, messages as any)
+            continue
+        }
+        
+        const typeMatch = text.match(/type\s+["'](.+?)["']/i)
+        if (typeMatch) {
+            const toolCall = { function: { name: 'gui_type', arguments: { text: typeMatch[1] } } }
+            await executeToolCall(toolCall, messages as any)
+            continue
+        }
+
         this.deps.logger.info('Model returned no tool calls; prompting to continue or finish', { goal })
         
         messages.push({
@@ -468,7 +485,7 @@ export class Agent {
               tools: toOllamaTools(tools)
             });
             
-            const nextToolCalls = response.message.tool_calls || []
+            const nextToolCalls = response.choices[0].message.tool_calls || []
             if (nextToolCalls.length === 0) {
                 this.deps.logger.warn('Model refused to call tools even after prompting. Waiting for user.', { goal })
                 state.waitingForUser = true
